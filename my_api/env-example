@@ -1,0 +1,13 @@
+
+from sqlalchemy import true
+
+
+DB_URL='postgresql://postgres:2046@localhost:5432/AppMobile'
+
+
+API_V1_STR='/api/v1'
+JWT_SECRET='JZC0124uMY9CZL8W329YMhWOagLf1ZcPKWuqEhc8i9s'
+
+
+
+DEBUG=true
