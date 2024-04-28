@@ -1,14 +1,15 @@
-from core.configs import settings
-from api.v1.api import api_router
-from fastapi import FastAPI
-import uvicorn
 import sys
 from pathlib import Path
 
-# Adiciona o diretório atual ao caminho de busca do Python
-sys.path.append(str(Path(__file__).resolve().parent))
+app_path = Path(__file__).resolve().parent
+app_directory = app_path / 'app'
+sys.path.append(str(app_directory))
 
+from core.configs import settings
 
+from api.v1.api import api_router
+from fastapi import FastAPI
+import uvicorn
 
 app = FastAPI(title='FastAPI | PostgreSQL e JWT - Segurança - Kevin Soffa')
 app.include_router(api_router, prefix=settings.API_V1_STR)

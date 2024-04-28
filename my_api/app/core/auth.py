@@ -1,3 +1,4 @@
+import bcrypt
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timedelta
@@ -52,3 +53,8 @@ def criar_token_acesso(sub: str) -> str:
         tempo_vida=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
         sub=sub
     )
+
+def gerar_hash_senha(senha: str) -> str:
+    salt = bcrypt.gensalt()
+    hash_senha = bcrypt.hashpw(senha.encode('utf-8'), salt)
+    return hash_senha.decode('utf-8')
