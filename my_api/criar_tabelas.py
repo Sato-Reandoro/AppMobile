@@ -1,21 +1,18 @@
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, DateTime
+from sqlalchemy import Boolean, create_engine, Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
 Base = declarative_base()
+class Usuario(Base):
+    __tablename__ = 'usuarios'
 
-class Adm(Base):
-    __tablename__ = 'adm'
     id = Column(Integer, primary_key=True)
     nome = Column(String)
+    sobrenome = Column(String)
     email = Column(String, unique=True)
-
-class Funcionario(Base):
-    __tablename__ = 'funcionario'
-    id = Column(Integer, primary_key=True)
-    nome = Column(String)
-    email = Column(String, unique=True)
-    adm_id = Column(Integer, ForeignKey('adm.id'))
+    senha = Column(String)
+    eh_admin = Column(Boolean, default=False)
+    
 
 class Agendamento(Base):
     __tablename__ = 'agendamento'
@@ -30,8 +27,6 @@ class Formulario(Base):
     descricao = Column(String)
     funcionario_id = Column(Integer, ForeignKey('funcionario.id'))
 
-Funcionario.adm = relationship("Adm", back_populates="funcionarios")
-Adm.funcionarios = relationship("Funcionario", back_populates="adm")
 
 def create_tables(engine):
     Base.metadata.create_all(engine)

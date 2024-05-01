@@ -14,6 +14,7 @@ import uvicorn
 app = FastAPI(title='FastAPI | PostgreSQL e JWT - Segurança - Kevin Soffa')
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
+
 if __name__ == '__main__':
     uvicorn.run(
         'main:app',
@@ -22,3 +23,5 @@ if __name__ == '__main__':
         log_level='info',
         reload=True
     )
+    
+    

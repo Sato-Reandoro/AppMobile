@@ -1,5 +1,15 @@
+from lib2to3.pytree import Base
 from core.configs import settings
 from sqlalchemy import (
+    ForeignKey,
+    Integer,
+    String,
+    Column,
+    Boolean
+)
+
+from sqlalchemy import (
+    ForeignKey,
     Integer,
     String,
     Column,
@@ -36,3 +46,11 @@ class UsuarioModel(settings.DBBasemodel):
         Boolean,
         default=False
     )
+    tipo_usuario = Column(
+        String(256),
+        nullable=True,
+        default='usuario'
+    )
+    
+  
+
