@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 # Importando os endpoints de funcionários e administradores
-from api.v1.endpoints import funcionario, admin
+from api.v1.endpoints import admin
 
 api_router = APIRouter()
 
