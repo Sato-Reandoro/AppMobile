@@ -14,18 +14,6 @@ class Usuario(Base):
     eh_admin = Column(Boolean, default=False)
     
 
-class Agendamento(Base):
-    __tablename__ = 'agendamento'
-    id = Column(Integer, primary_key=True)
-    data_hora = Column(DateTime)
-    funcionario_id = Column(Integer, ForeignKey('funcionario.id'))
-
-class Formulario(Base):
-    __tablename__ = 'formulario'
-    id = Column(Integer, primary_key=True)
-    nome = Column(String)
-    descricao = Column(String)
-    funcionario_id = Column(Integer, ForeignKey('funcionario.id'))
 
 
 def create_tables(engine):
