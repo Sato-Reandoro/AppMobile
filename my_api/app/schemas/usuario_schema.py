@@ -13,7 +13,8 @@ class UsuarioSchemaBase(BaseModel):
         orm_mode = True
 
 class UsuarioSchemaCreate(UsuarioSchemaBase):
-    pass
+    eh_admin: Optional[bool] = None  # Indica se o usuário é administrador
+    tipo_usuario: Optional[str] = None  # Tipo de usuário (por exemplo, 'admin' ou 'funcionario')
 
 class UsuarioSchemaUp(UsuarioSchemaBase):
     nome: Optional[str]

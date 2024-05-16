@@ -11,7 +11,7 @@ from api.v1.api import api_router
 from fastapi import FastAPI
 import uvicorn
 
-app = FastAPI(title='FastAPI | PostgreSQL e JWT - Segurança - Kevin Soffa')
+app = FastAPI(title='FastAPI | PostgreSQL e JWT - Segurança -')
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 
