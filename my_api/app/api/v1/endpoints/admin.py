@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
-from api.v1.CRUD_BD import atualizar_dados_usuario, buscar_por_id, buscar_por_nome, criar_novo_usuario, delete_user, obter_usuarios, verificar_adm_mesmo, verificar_administrador_global, verificar_usuario_logado
+from core.crud_bd import atualizar_dados_usuario, buscar_por_id, buscar_por_nome, criar_novo_usuario, delete_user, obter_usuarios, verificar_adm_mesmo, verificar_administrador_global, verificar_usuario_logado
 from fastapi.security import OAuth2PasswordRequestForm
 
 

@@ -3,23 +3,19 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy import create_engine, select
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
+from core.deps import get_current_user, get_session
+from core.security import gerar_hash_senha
 from fastapi import HTTPException, status
-from models import UsuarioModel
-from schemas import UsuarioSchemaCreate
-from utils import gerar_hash_senha
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from.models import UsuarioModel
-from.schemas.usuario_schema import UsuarioSchemaBase
-from.crud_bd import get_current_user
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import Session
 from fastapi import Depends, HTTPException, status
-from database import get_session
-from schemas.usuario_schema import UsuarioSchemaBase
-from crud_bd import get_current_user
-from models.usuario_model import UsuarioModel
+from models.usuarios_model import UsuarioModel
+from schemas.usuario_schema import UsuarioSchemaBase, UsuarioSchemaCreate
+
+
 from typing import List
 
 
