@@ -9,8 +9,8 @@ class UsuarioSchemaBase(BaseModel):
     senha: str
     tipo_usuario: str
 
-    class Config:
-        orm_mode = True
+class Config:
+        from_attributes = True
 
 class UsuarioSchemaCreate(UsuarioSchemaBase):
     eh_admin: Optional[bool] = None  # Indica se o usuário é administrador

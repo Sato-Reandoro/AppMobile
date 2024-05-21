@@ -12,8 +12,9 @@ def verificar_senha(senha: str, hash_senha: str) -> bool:
     """
     return CRIPTO.verify(senha, hash_senha)
 
+
 def gerar_hash_senha(senha: str) -> str:
     """
-    Função que gera e retorna o hash da senha
+    Função que gera e retorna o hash da senha usando passlib
     """
     return CRIPTO.hash(senha)
