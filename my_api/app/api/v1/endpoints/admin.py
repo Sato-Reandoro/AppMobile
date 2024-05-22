@@ -18,7 +18,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from models.usuarios_model import UsuarioModel
 from core.deps import get_session, get_current_user
 from schemas.usuario_schema import (
-    SignupResponseSchema,
     UsuarioSchemaBase,
     UsuarioSchemaCreate,
     UsuarioSchemaUp
@@ -38,11 +37,11 @@ def get_db():
 @app.post('/signup', status_code=status.HTTP_201_CREATED)
 async def post_usuario(usuario: UsuarioSchemaCreate, db: Session = Depends(get_db)):
     try:
-        criar_novo_usuario(db, usuario)
-        return JSONResponse(content={}, status_code=204)  # Corrigido para incluir o argumento 'content'
+        usuario_criado = criar_novo_usuario(db, usuario)
+        return JSONResponse(content=usuario_criado, status_code=status.HTTP_201_CREATED)
     except Exception as e:
-        # Trate exceções aqui, se necessário
         raise HTTPException(status_code=500, detail=str(e))
+
 
 
 @app.get('/logado', response_model=UsuarioSchemaBase)

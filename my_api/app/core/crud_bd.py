@@ -41,11 +41,9 @@ def definir_tipo_usuario(tipo_usuario: str) -> tuple[bool, str]:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tipo de usuário inválido.")
 
 def criar_novo_usuario(db: Session, usuario: UsuarioSchemaCreate):
-    # Verifica se o e-mail já está em uso
     if verificar_email_em_uso(usuario.email, db):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email já está em uso.")
     
-    # Valida o tipo de usuário
     eh_admin, tipo_usuario = definir_tipo_usuario(usuario.tipo_usuario)
     usuario.eh_admin = eh_admin
     
@@ -62,12 +60,12 @@ def criar_novo_usuario(db: Session, usuario: UsuarioSchemaCreate):
         db.commit()
         db.refresh(novo_usuario)
         
-        # Retorna informações sobre o usuário criado
         return {"id": novo_usuario.id, "email": novo_usuario.email}
     except IntegrityError:
-        db.rollback()  # Garante que o banco de dados volte ao estado anterior em caso de erro
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao criar o usuário. Verifique os dados fornecidos.")
-
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao criar usuário.")
+    
+    
 #verificação global de adm
 def verificar_administrador_global(usuario_logado: UsuarioModel):
     if not usuario_logado.eh_admin:
