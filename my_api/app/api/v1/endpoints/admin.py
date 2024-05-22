@@ -1,4 +1,5 @@
 # /api/v1/endpoints/admin.py
+from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from core.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from models.usuarios_model import UsuarioModel
 from core.deps import get_session, get_current_user
 from schemas.usuario_schema import (
+    SignupResponseSchema,
     UsuarioSchemaBase,
     UsuarioSchemaCreate,
     UsuarioSchemaUp
@@ -33,10 +35,15 @@ def get_db():
     finally:
         db.close()
 
-@app.post('/signup', status_code=status.HTTP_201_CREATED, response_model=UsuarioSchemaBase)
+@app.post('/signup', status_code=status.HTTP_201_CREATED)
 async def post_usuario(usuario: UsuarioSchemaCreate, db: Session = Depends(get_db)):
-    criar_novo_usuario(db, usuario)
-    return {"message": "Usuário criado com sucesso.", "tipo_usuario": usuario.tipo_usuario}
+    try:
+        criar_novo_usuario(db, usuario)
+        return JSONResponse(content={}, status_code=204)  # Corrigido para incluir o argumento 'content'
+    except Exception as e:
+        # Trate exceções aqui, se necessário
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get('/logado', response_model=UsuarioSchemaBase)
 def get_logado(usuario_logado: UsuarioModel = Depends(verificar_usuario_logado)):

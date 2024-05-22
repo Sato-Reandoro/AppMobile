@@ -10,6 +10,11 @@ class UsuarioSchemaBase(BaseModel):
     eh_admin: bool
     tipo_usuario: str
 
+class SignupResponseSchema(BaseModel):
+    message: str
+    tipo_usuario: str
+
+
 class Config:
         from_attributes = True
 
@@ -24,3 +29,5 @@ class UsuarioSchemaUp(UsuarioSchemaBase):
     senha: Optional[str]
     eh_admin: bool
     tipo_usuario: Optional[str]
+
+    

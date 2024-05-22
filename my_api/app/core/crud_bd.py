@@ -61,6 +61,9 @@ def criar_novo_usuario(db: Session, usuario: UsuarioSchemaCreate):
         db.add(novo_usuario)
         db.commit()
         db.refresh(novo_usuario)
+        
+        # Retorna informações sobre o usuário criado
+        return {"id": novo_usuario.id, "email": novo_usuario.email}
     except IntegrityError:
         db.rollback()  # Garante que o banco de dados volte ao estado anterior em caso de erro
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao criar o usuário. Verifique os dados fornecidos.")
