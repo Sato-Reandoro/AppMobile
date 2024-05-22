@@ -1,11 +1,12 @@
 # /api/v1/endpoints/admin.py
+from sqlalchemy import select
 from core.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
-from core.crud_bd import SessionLocal, atualizar_dados_usuario, buscar_por_id, buscar_por_nome, criar_novo_usuario, delete_user, obter_usuarios, verificar_adm_mesmo, verificar_administrador_global, verificar_usuario_logado
+from core.crud_bd import  atualizar_dados_usuario, verificar_adm_mesmo, SessionLocal, buscar_por_id, buscar_por_nome, criar_novo_usuario, delete_user, obter_usuarios, verificar_adm_mesmo, verificar_administrador_global, verificar_usuario_logado
 from fastapi.security import OAuth2PasswordRequestForm
 
 
@@ -42,8 +43,13 @@ def get_logado(usuario_logado: UsuarioModel = Depends(verificar_usuario_logado))
     return usuario_logado
 
 @app.get('/', response_model=List[UsuarioSchemaBase])
-async def get_usuarios():
-    return await obter_usuarios()
+async def get_usuarios(db: Session = Depends(get_db), usuario_logado: UsuarioModel = Depends(get_current_user)):
+    verificar_administrador_global(usuario_logado)  # Verifica se o usuário é um administrador
+    async with db:
+        query = select(UsuarioModel)
+        result = await db.execute(query)
+        usuarios: List[UsuarioSchemaBase] = result.scalars().unique().all()
+        return usuarios
 
 @app.get("/{usuario_id}", response_model=UsuarioSchemaBase, status_code=status.HTTP_200_OK)
 async def get_usuario_por_id(usuario_id: int = Path(..., title="ID do Usuário", description="ID do usuário para buscar"), db: AsyncSession = Depends(get_session)):
@@ -57,18 +63,18 @@ async def get_usuario_por_nome(nome: str = Path(..., title="Nome do Usuário", d
     verificar_administrador_global(usuario_logado)  # Verifica se o usuário é um administrador
     return await buscar_por_nome(nome, db)
 
-@app.put('/{usuario_id}', response_model=UsuarioSchemaBase, status_code=status.HTTP_202_ACCEPTED)
-async def put_usuario(usuario_id: int, usuario: UsuarioSchemaUp, db: AsyncSession = Depends(get_session)):
-    usuario_logado = Depends(get_current_user)
-    verificar_administrador_global(usuario_logado)  # Verifica se o usuário é um administrador
-    verificar_adm_mesmo(usuario_logado, usuario_id)  # Verifica se o administrador é o mesmo que está tentando atualizar
-    return await atualizar_dados_usuario(usuario_id, usuario, db)
+@app.put('/atualizar/{usuario_id}', response_model=UsuarioSchemaBase, status_code=202)
+async def put_usuario(usuario_id: int, usuario: UsuarioSchemaUp, usuario_logado: UsuarioModel = Depends(get_current_user), db: AsyncSession = Depends(get_session)):
+    await verificar_adm_mesmo(usuario_logado, usuario_id)
+    verificar_administrador_global(usuario_logado)
+    return await  atualizar_dados_usuario(usuario_id, usuario, db)
 
 
 @app.delete('/apagar/{usuario_id}', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_usuario(usuario_id: int, db: AsyncSession = Depends(get_session)):
+async def delete_usuario(usuario_id: int, db: AsyncSession = Depends(get_current_user)):
     usuario_logado = Depends(get_current_user)
-    verificar_administrador_global(usuario_logado)  # Verifica se o usuário é um administrador
+    # Remova o Depends ao passar o argumento para verificar_administrador_global
+    verificar_administrador_global(usuario_logado)  # Correção: passando o objeto UsuarioModel diretamente
     success = await delete_user(usuario_id, db)
     if success:
         return Response(status_code=status.HTTP_204_NO_CONTENT)

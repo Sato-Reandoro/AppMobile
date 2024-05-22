@@ -22,17 +22,15 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
         await session.close()
 
 async def get_current_user(
-    db: AsyncSession = Depends(get_session), 
+    db: AsyncSession = Depends(get_session),
     token: str = Depends(oauth2_schema)
 ) -> UsuarioModel:
-
     credential_exception: HTTPException = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail='Não foi possível autenticar a credencial!',
         headers={"WWW-Authenticate": "Bearer"}
     )
 
-    # Pega o Token e decodifica
     try:
         payload = jwt.decode(
             token,
@@ -45,13 +43,11 @@ async def get_current_user(
         if username is None:
             raise credential_exception
 
-        # Montando o Token Data
         token_data: TokenData = TokenData(username=username)
 
     except JWTError:
         raise credential_exception
 
-    # Buscando o usuário no banco de dados
     query = select(UsuarioModel).filter(UsuarioModel.email == token_data.username)
     result = await db.execute(query)
     usuario: UsuarioModel = result.scalars().unique().one_or_none()

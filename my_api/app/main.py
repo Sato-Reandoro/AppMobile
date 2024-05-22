@@ -32,7 +32,7 @@ app.get('/logado', response_model=UsuarioSchemaBase)(get_logado)
 app.get('/', response_model=list[UsuarioSchemaBase])(get_usuarios)
 app.get("/{usuario_id}", response_model=UsuarioSchemaBase, status_code=200)(get_usuario_por_id)
 app.get("/nome/{nome}", response_model=UsuarioSchemaBase, status_code=200)(get_usuario_por_nome)
-app.put('/{usuario_id}', response_model=UsuarioSchemaBase, status_code=202)(put_usuario)
+app.put('/atualizar/{usuario_id}', response_model=UsuarioSchemaBase, status_code=202)(put_usuario)
 app.delete('/apagar/{usuario_id}', status_code=204)(delete_usuario)
 app.post('/login')(login)
 

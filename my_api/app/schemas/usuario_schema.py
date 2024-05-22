@@ -7,6 +7,7 @@ class UsuarioSchemaBase(BaseModel):
     sobrenome: str
     email: EmailStr
     senha: str
+    eh_admin: bool
     tipo_usuario: str
 
 class Config:
@@ -21,4 +22,5 @@ class UsuarioSchemaUp(UsuarioSchemaBase):
     sobrenome: Optional[str]
     email: Optional[EmailStr]
     senha: Optional[str]
+    eh_admin: bool
     tipo_usuario: Optional[str]

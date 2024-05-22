@@ -16,6 +16,7 @@ from models.usuarios_model import UsuarioModel
 from schemas.usuario_schema import UsuarioSchemaBase, UsuarioSchemaCreate
 
 
+
 from typing import List
 
 
@@ -63,13 +64,15 @@ def criar_novo_usuario(db: Session, usuario: UsuarioSchemaCreate):
     except IntegrityError:
         db.rollback()  # Garante que o banco de dados volte ao estado anterior em caso de erro
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao criar o usuário. Verifique os dados fornecidos.")
+
 #verificação global de adm
 def verificar_administrador_global(usuario_logado: UsuarioModel):
     if not usuario_logado.eh_admin:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Acesso negado. Somente administradores podem acessar esta rota."
-            )
+            status_code=403,
+            detail="Você não tem permissão para acessar esta rota."
+        )
+
 
 #usuario logado 
 def verificar_usuario_logado(db: Session = Depends(get_db)):
@@ -125,19 +128,19 @@ async def buscar_por_nome(nome: str, db: Session = Depends(get_session)):
             )
         
 #put users
-def verificar_adm_mesmo(usuario_logado, usuario_id):
+async def verificar_adm_mesmo(usuario_logado: UsuarioModel, usuario_id: int):
     if usuario_logado.id!= usuario_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Acesso negado. Um administrador só pode atualizar sua própria conta."
         )
 
-async def atualizar_dados_usuario(usuario_id, usuario_atualizado, db):
+async def atualizar_dados_usuario(usuario_id, usuario_atualizado, db: AsyncSession):
     async with db as session:
         query = select(UsuarioModel).filter(UsuarioModel.id == usuario_id)
         result = await session.execute(query)
         usuario_antigo = result.scalars().unique().one_or_none()
-        
+
         if usuario_antigo:
             if usuario_atualizado.nome:
                 usuario_antigo.nome = usuario_atualizado.nome
@@ -149,7 +152,7 @@ async def atualizar_dados_usuario(usuario_id, usuario_atualizado, db):
                 usuario_antigo.eh_admin = usuario_atualizado.eh_admin
             if usuario_atualizado.senha:
                 usuario_antigo.senha = gerar_hash_senha(usuario_atualizado.senha)
-            
+
             await session.commit()
             return usuario_antigo
         else:
@@ -157,6 +160,8 @@ async def atualizar_dados_usuario(usuario_id, usuario_atualizado, db):
                 detail=f'ID do Usuário: {str(usuario_id)}, Não encontrado na Base de Dados!',
                 status_code=status.HTTP_404_NOT_FOUND
             )
+
+            
 #delete usrs
 async def delete_user(usuario_id: int, db: AsyncSession):
     async with db as session:
