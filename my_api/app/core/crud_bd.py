@@ -3,7 +3,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy import create_engine, select
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
-from core.deps import get_current_user, get_session
+from core.deps import get_current_user
 from core.security import gerar_hash_senha
 from fastapi import HTTPException, status
 from fastapi import Depends, HTTPException, status
@@ -94,7 +94,7 @@ def verificar_usuario_logado(db: Session = Depends(get_db)):
 async def obter_usuarios():
     usuario_logado = Depends(get_current_user)
     verificar_administrador_global(usuario_logado)  # Verifica se o usuário é um administrador
-    async with get_session() as db:
+    async with get_db() as db:
         query = select(UsuarioModel)
         result = await db.execute(query)
         usuarios: List[UsuarioSchemaBase] = result.scalars().unique().all()
@@ -102,7 +102,7 @@ async def obter_usuarios():
     
     #get users por id 
     
-async def buscar_por_id(usuario_id: int, db: Session = Depends(get_session)):
+async def buscar_por_id(usuario_id: int, db: Session = Depends(get_db)):
      async with db as session:
         query = select(UsuarioModel).filter(UsuarioModel.id == usuario_id)
         result = await session.execute(query)
@@ -115,7 +115,7 @@ async def buscar_por_id(usuario_id: int, db: Session = Depends(get_session)):
                 status_code=status.HTTP_404_NOT_FOUND
             )
 
-async def buscar_por_nome(nome: str, db: Session = Depends(get_session)):
+async def buscar_por_nome(nome: str, db: Session = Depends(get_db)):
     async with db as session:
         query = select(UsuarioModel).filter(UsuarioModel.nome == nome)
         result = await session.execute(query)
