@@ -1,125 +1,95 @@
 from datetime import datetime, timedelta, timezone
-from typing import Annotated
-
-from sqlalchemy.orm import Session
-import jwt
+from typing import Optional
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from jwt.exceptions import InvalidTokenError
-from passlib.context import CryptContext
+from jose import jwt, JWTError
+from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
-
-from core.database import get_db
+from fastapi.security import OAuth2PasswordBearer
+from core.database import get_db  # Certifique-se de que esta função retorna uma sessão síncrona
 from models.usuarios_model import UsuarioModel
+from passlib.context import CryptContext
 
-SECRET_KEY = "JZC0124uMY9CZL8W329YMhWOagLf1ZcPKWuqEhc8i9s"  # Substitua pela sua chave secreta real
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+hashed_password = pwd_context.hash("mysecretpassword")
+
+
+SECRET_KEY = "JZC0124uMY9CZL8W329YMhWOagLf1ZcPKWuqEhc8i9s"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
-DATABASE_URL = "postgresql://postgres:2046@localhost:5432/AppMobile"
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="admin.py")
 
 class Token(BaseModel):
     access_token: str
     token_type: str
 
 class TokenData(BaseModel):
-    username: str | None = None
-
-    
-class User(BaseModel):
-    username: str
-    email: str | None = None
-    full_name: str | None = None
-    disabled: bool | None = None
-
-
-class UserInDB(User):
-    hashed_password: str 
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")  
-
+    nome: str
+    sobrenome: str
+    email: str
+    senha: str
+    eh_admin: bool
+    tipo_usuario: str
 
 def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+    return plain_password == hashed_password
 
+access_token_expires = datetime.now(timezone.utc) + timedelta(minutes=30)
 
-def get_password_hash(password):
-    return pwd_context.hash(password) 
-
-def get_user(db: Session, username: str):
-    query = db.query(UsuarioModel).filter(UsuarioModel.email == username)
-    result = db.execute(query)
-    user = result.scalar_one_or_none()
-    return user
-    
-
-
-# Função para obter uma sessão do banco de dados
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-def authenticate_user(db: Session, username: str, password: str):
-    user = get_user(db, username)
-    if not user:
-        return False
-    if not verify_password(password, user.senha):
-        return False
-    return user
-
-def create_access_token(data: dict, expires_delta: timedelta | None = None):
+def create_access_token(*, data: dict):
     to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
-    else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
-    to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt   
+    return encoded_jwt
 
-async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+
+def get_current_user(
+    db: Session = Depends(get_db),
+    token: str = Depends(oauth2_scheme)
+):
+    """
+    Função para obter o usuário atual com base no ID do usuário extraído do token.
+    """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception
         token_data = TokenData(username=username)
-    except jwt.InvalidTokenError:
+    except JWTError:
         raise credentials_exception
-    user = get_user(get_db, username=token_data.username)
+
+    user = db.query(UsuarioModel).filter(UsuarioModel.username == token_data.username).first()
     if user is None:
-        raise credentials_exception
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
     return user
 
+#def authenticate_user(db: Session, email: str, password: str):
+ #   user = db.query(UsuarioModel).filter(UsuarioModel.email == email).first()
+  #  if not user:
+   #     return False
+    #if pwd_context.verify(password, user.senha):  # Verifica a senha com o hash armazenado
+     #   return user
+    return False
 
-async def get_current_active_user(
-    current_user: Annotated[User, Depends(get_current_user)],
-):
-    if current_user.disabled:
-        raise HTTPException(status_code=400, detail="Inactive user")
-    return current_user 
+def get_user(db: Session, email: str) -> Optional[UsuarioModel]:
+    return db.query(UsuarioModel).filter(UsuarioModel.email == email).first()
 
 
+
+def authenticate_user(email: str, password: str) -> Optional[UsuarioModel]:
+    # Obtém o usuário do banco de dados com base no email
+    user = get_user(email)
+    
+    # Verifica se o usuário foi encontrado e se a senha está correta
+    if user and user.password == password:
+        return user
+    
+    # Retorna None se o usuário não for encontrado ou se a senha estiver incorreta
+    return None

@@ -1,24 +1,18 @@
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine, AsyncSession
+# core/database.py
+from sqlalchemy.orm import Session
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from core.configs import settings
+from typing import Generator
+from sqlalchemy.ext.declarative import declarative_base
 
-# Atualizando a URL do banco de dados para a fornecida
-settings.DB_URL = "postgresql+asyncpg://postgres:2046@localhost:5432/AppMobile"
+DATABASE_URL = "postgresql://postgres:2046@localhost:5432/AppMobile"  # Exemplo, ajuste conforme sua configuração
 
-# Criando o motor de banco de dados assíncrono
-engine: AsyncEngine = create_async_engine(settings.DB_URL)
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
 
-# Criando a fábrica de sessões assíncronas
-Session: AsyncSession = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    expire_on_commit=False,
-    class_=AsyncSession,
-    bind=engine
-)
-
-def get_db():
-    db = Session()
+def get_db() -> Generator[Session, None, None]:
+    db = SessionLocal()
     try:
         yield db
     finally:

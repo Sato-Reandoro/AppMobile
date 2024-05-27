@@ -6,7 +6,8 @@ import secrets
 
 class Settings(BaseSettings):
     API_V1_STR: str = config('API_V1_STR', default='/api/v1')
-    DB_URL: str = config('DB_URL', default='postgresql+asyncpg://postgres:2046@localhost:5432/AppMobile')
+    DB_URL: str = config('DB_URL', default='postgresql+psycopg2://postgres:2046@localhost:5432/AppMobile')
+
     
     DBBasemodel: ClassVar = declarative_base()
 
