@@ -1,3 +1,4 @@
+from datetime import datetime
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 
@@ -20,3 +21,27 @@ class UserCreate(UserBase):
 class User(UserBase):
     id: int
     user_type: str
+
+
+#agendamento
+class ScheduleBase(BaseModel):
+    name: Optional[str]
+    condominium: Optional[str]
+    date_time: Optional[datetime]
+
+class ScheduleCreate(ScheduleBase):
+    name: str
+    condominium: str
+    date_time: datetime
+
+class ScheduleUpdate(BaseModel):
+    name: Optional[str] = None
+    condominium: Optional[str] = None
+    date_time: Optional[datetime] = None
+
+class Schedule(ScheduleBase):
+    id: int
+    owner_id: int  # Renomeado de user_id para owner_id
+
+    class Config:
+        orm_mode = True

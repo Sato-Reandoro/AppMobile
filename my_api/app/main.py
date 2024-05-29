@@ -5,6 +5,10 @@ from sqlalchemy.orm import Session
 from typing import List
 from . import models, schemas, crud, security
 from .database import engine, SessionLocal, Base
+from app.models import Schedule, User
+from app.schemas import ScheduleUpdate
+
+
 
 # Inicialização do FastAPI
 app = FastAPI()
@@ -131,3 +135,44 @@ def delete_user(
     deleted_user = crud.delete_user(db, user_id)
     
     return deleted_user
+
+#agendamento 
+@app.post("/schedules/", response_model=schemas.Schedule)
+def create_schedule(schedule: schemas.ScheduleCreate, current_user: schemas.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return crud.create_schedule(db, schedule, current_user.id)
+
+@app.get("/schedules/", response_model=List[schemas.Schedule])
+def read_schedules(skip: int = 0, limit: int = 10, current_user: schemas.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.user_type != "admin":
+        raise HTTPException(status_code=403, detail="You don't have enough permissions")
+    return crud.get_schedules(db, skip=skip, limit=limit)
+
+@app.get("/schedules/me", response_model=List[schemas.Schedule])
+def read_user_schedules(current_user: schemas.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return crud.get_schedules_by_user(db, current_user.id)
+
+@app.put("/users/{user_id}", response_model=schemas.User)
+def update_user(
+    user_id: int,
+    user_in: schemas.UserUpdate,
+    current_user: schemas.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    # Verificar se o usuário atual é um administrador
+    if current_user.user_type != "admin":
+        raise HTTPException(status_code=403, detail="You don't have enough permissions")
+    
+    # Atualizar o usuário utilizando a função do módulo CRUD
+    updated_user = crud.update_user(db, user_id, user_in)
+    
+    return updated_user
+
+
+@app.delete("/schedules/{schedule_id}", response_model=schemas.Schedule)
+def delete_schedule(schedule_id: int, current_user: schemas.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    db_schedule = crud.get_schedule(db, schedule_id)
+    if db_schedule is None:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+    if db_schedule.owner_id != current_user.id and current_user.user_type != "admin":
+        raise HTTPException(status_code=403, detail="You don't have enough permissions")
+    return crud.delete_schedule(db, schedule_id)
