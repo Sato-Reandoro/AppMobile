@@ -5,10 +5,6 @@ from sqlalchemy.orm import Session
 from typing import List
 from . import models, schemas, crud, security
 from .database import engine, SessionLocal, Base
-from app.models import Schedule, User
-from app.schemas import ScheduleUpdate
-
-
 
 # Inicialização do FastAPI
 app = FastAPI()
@@ -48,8 +44,6 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise credentials_exception
     return user
 
-
-
 # Rota para gerar token JWT (login)
 @app.post("/token")
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
@@ -65,16 +59,12 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
-
-
 # Rota para listar todos os usuários (apenas para administradores)
 @app.get("/users/", response_model=List[schemas.User])
 def read_users(skip: int = 0, limit: int = 10, current_user: schemas.User = Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.user_type != "admin":
         raise HTTPException(status_code=403, detail="You don't have enough permissions")
     return crud.get_all_users(db, skip=skip, limit=limit)
-
-
 
 # Rota para criar um novo usuário (apenas para administradores)
 @app.post("/users/", response_model=schemas.User)
@@ -136,43 +126,77 @@ def delete_user(
     
     return deleted_user
 
-#agendamento 
+# Rota para criar um agendamento e um formulário vinculado
 @app.post("/schedules/", response_model=schemas.Schedule)
-def create_schedule(schedule: schemas.ScheduleCreate, current_user: schemas.User = Depends(get_current_user), db: Session = Depends(get_db)):
-    return crud.create_schedule(db, schedule, current_user.id)
+def create_schedule(schedule_in: schemas.ScheduleCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
+    schedule, form = crud.create_schedule_with_form(db, schedule=schedule_in, user_id=current_user.id)
+    return schedule
 
+# Rota para obter todos os agendamentos
 @app.get("/schedules/", response_model=List[schemas.Schedule])
-def read_schedules(skip: int = 0, limit: int = 10, current_user: schemas.User = Depends(get_current_user), db: Session = Depends(get_db)):
-    if current_user.user_type != "admin":
-        raise HTTPException(status_code=403, detail="You don't have enough permissions")
-    return crud.get_schedules(db, skip=skip, limit=limit)
+def read_schedules(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+    schedules = crud.get_schedules(db, skip=skip, limit=limit)
+    return schedules
 
-@app.get("/schedules/me", response_model=List[schemas.Schedule])
-def read_user_schedules(current_user: schemas.User = Depends(get_current_user), db: Session = Depends(get_db)):
-    return crud.get_schedules_by_user(db, current_user.id)
+# Rota para obter agendamentos de um usuário específico
+@app.get("/users/{user_id}/schedules/", response_model=List[schemas.Schedule])
+def read_user_schedules(user_id: int, db: Session = Depends(get_db)):
+    schedules = crud.get_schedules_by_user(db, user_id=user_id)
+    return schedules
 
-@app.put("/users/{user_id}", response_model=schemas.User)
-def update_user(
-    user_id: int,
-    user_in: schemas.UserUpdate,
-    current_user: schemas.User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    # Verificar se o usuário atual é um administrador
-    if current_user.user_type != "admin":
-        raise HTTPException(status_code=403, detail="You don't have enough permissions")
-    
-    # Atualizar o usuário utilizando a função do módulo CRUD
-    updated_user = crud.update_user(db, user_id, user_in)
-    
-    return updated_user
-
-
-@app.delete("/schedules/{schedule_id}", response_model=schemas.Schedule)
-def delete_schedule(schedule_id: int, current_user: schemas.User = Depends(get_current_user), db: Session = Depends(get_db)):
-    db_schedule = crud.get_schedule(db, schedule_id)
-    if db_schedule is None:
+# Rota para obter um agendamento específico pelo ID
+@app.get("/schedules/{schedule_id}", response_model=schemas.Schedule)
+def read_schedule(schedule_id: int, db: Session = Depends(get_db)):
+    schedule = crud.get_schedule(db, schedule_id=schedule_id)
+    if schedule is None:
         raise HTTPException(status_code=404, detail="Schedule not found")
-    if db_schedule.owner_id != current_user.id and current_user.user_type != "admin":
-        raise HTTPException(status_code=403, detail="You don't have enough permissions")
-    return crud.delete_schedule(db, schedule_id)
+    return schedule
+
+# Rota para atualizar um agendamento pelo ID
+@app.put("/schedules/{schedule_id}", response_model=schemas.Schedule)
+def update_schedule(
+    schedule_id: int,
+    schedule_in: schemas.ScheduleUpdate,
+    db: Session = Depends(get_db),
+    current_user: schemas.User = Depends(get_current_user)
+):
+    schedule = crud.get_schedule(db, schedule_id=schedule_id)
+    if schedule is None:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+    if schedule.owner_id != current_user.id and current_user.user_type != "admin":
+        raise HTTPException(status_code=403, detail="You don't have permission to update this schedule")
+    updated_schedule = crud.update_schedule(db, schedule_id, schedule_in)
+    return updated_schedule
+
+# Rota para deletar um agendamento pelo ID
+@app.delete("/schedules/{schedule_id}", response_model=schemas.Schedule)
+def delete_schedule(schedule_id: int, db: Session = Depends(get_db)):
+    schedule = crud.delete_schedule(db, schedule_id=schedule_id)
+    if schedule is None:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+    return schedule
+
+# Rota para obter todos os formulários
+@app.get("/forms/", response_model=List[schemas.Form])
+def read_forms(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+    forms = crud.get_forms(db, skip=skip, limit=limit)
+    return forms
+
+# Rota para obter um formulário específico pelo ID
+@app.get("/forms/{form_id}", response_model=schemas.Form)
+def read_form(form_id: int, db: Session = Depends(get_db)):
+    form = crud.get_form(db, form_id=form_id)
+    if form is None:
+        raise HTTPException(status_code=404, detail="Form not found")
+    return form
+
+# Rota para atualizar um formulário pelo ID
+@app.put("/forms/{form_id}", response_model=schemas.Form)
+def update_form(form_id: int, form: schemas.FormUpdate, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
+    db_form = crud.get_form(db, form_id=form_id)
+    if db_form is None:
+        raise HTTPException(status_code=404, detail="Form not found")
+    schedule = crud.get_schedule(db, schedule_id=db_form.schedule_id)
+    if schedule.owner_id != current_user.id and current_user.user_type != 'admin':
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    return crud.update_form(db=db, form_id=form_id, form=form)

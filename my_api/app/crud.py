@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from . import models, schemas
 from .security import get_password_hash
 
+#User
 def get_user_by_email(db: Session, email: str):
     return db.query(models.User).filter(models.User.email == email).first()
 
@@ -49,40 +50,61 @@ def delete_user(db: Session, user_id: int):
     return user
 
 
-#agendamento 
-def get_schedule(db: Session, schedule_id: int):
-    return db.query(models.Schedule).filter(models.Schedule.id == schedule_id).first()
-
-def get_schedules_by_user(db: Session, user_id: int):
-    return db.query(models.Schedule).filter(models.Schedule.owner_id == user_id).all()
-
-def get_schedules(db: Session, skip: int = 0, limit: int = 10):
-    return db.query(models.Schedule).offset(skip).limit(limit).all()
-
-def create_schedule(db: Session, schedule: schemas.ScheduleCreate, user_id: int):
+def create_schedule_with_form(db: Session, schedule: schemas.ScheduleCreate, user_id: int):
     db_schedule = models.Schedule(**schedule.dict(), owner_id=user_id)
     db.add(db_schedule)
     db.commit()
     db.refresh(db_schedule)
-    return db_schedule
 
-def update_schedule(db: Session, schedule_id: int, schedule_in: schemas.ScheduleUpdate) -> models.Schedule:
+    form_data = {"title": schedule.name, "description": schedule.condominium}
+    db_form = models.Form(**form_data, schedule_id=db_schedule.id)
+    db.add(db_form)
+    db.commit()
+    db.refresh(db_form)
+
+    return db_schedule, db_form
+
+def get_schedules(db: Session, skip: int = 0, limit: int = 10):
+    return db.query(models.Schedule).offset(skip).limit(limit).all()
+
+def get_schedules_by_user(db: Session, user_id: int):
+    return db.query(models.Schedule).filter(models.Schedule.owner_id == user_id).all()
+
+def get_schedule(db: Session, schedule_id: int):
+    return db.query(models.Schedule).filter(models.Schedule.id == schedule_id).first()
+
+def update_schedule(db: Session, schedule_id: int, schedule: schemas.ScheduleUpdate):
     db_schedule = db.query(models.Schedule).filter(models.Schedule.id == schedule_id).first()
-    if not db_schedule:
-        raise HTTPException(status_code=404, detail="Schedule not found")
-
-    for var, value in vars(schedule_in).items():
-        if value is not None:
-            setattr(db_schedule, var, value)
-
-    db.add(db_schedule)
+    if db_schedule is None:
+        return None
+    if schedule.name is not None:
+        db_schedule.name = schedule.name
+    if schedule.condominium is not None:
+        db_schedule.condominium = schedule.condominium
+    if schedule.date_time is not None:
+        db_schedule.date_time = schedule.date_time
     db.commit()
     db.refresh(db_schedule)
     return db_schedule
 
 def delete_schedule(db: Session, schedule_id: int):
     db_schedule = db.query(models.Schedule).filter(models.Schedule.id == schedule_id).first()
-    if db_schedule:
-        db.delete(db_schedule)
-        db.commit()
+    db.delete(db_schedule)
+    db.commit()
     return db_schedule
+
+def get_forms(db: Session, skip: int = 0, limit: int = 10):
+    return db.query(models.Form).offset(skip).limit(limit).all()
+
+def get_form(db: Session, form_id: int):
+    return db.query(models.Form).filter(models.Form.id == form_id).first()
+
+def update_form(db: Session, form_id: int, form: schemas.FormUpdate):
+    db_form = db.query(models.Form).filter(models.Form.id == form_id).first()
+    if form.title is not None:
+        db_form.title = form.title
+    if form.description is not None:
+        db_form.description = form.description
+    db.commit()
+    db.refresh(db_form)
+    return db_form

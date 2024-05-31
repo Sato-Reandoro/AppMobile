@@ -1,16 +1,14 @@
-from datetime import datetime
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
-from .database import Base
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
+from .database import Base
 
 class User(Base):
     __tablename__ = "users"
-    
     id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True)
-    hashed_password = Column(String)
-    name = Column(String)
-    user_type = Column(String)
+    email = Column(String, unique=True, index=True, nullable=False)
+    name = Column(String, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    user_type = Column(String, nullable=False)
 
     schedules = relationship("Schedule", back_populates="owner")
 
@@ -20,7 +18,18 @@ class Schedule(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     condominium = Column(String, index=True)
-    date_time = Column(DateTime, default=datetime.utcnow)
-    owner_id = Column(Integer, ForeignKey("users.id"))  # Renomeado de user_id para owner_id
-
+    date_time = Column(DateTime)
+    owner_id = Column(Integer, ForeignKey("users.id"))
+    
     owner = relationship("User", back_populates="schedules")
+    forms = relationship("Form", back_populates="schedule", cascade="all, delete-orphan")
+
+class Form(Base):
+    __tablename__ = "forms"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, index=True)
+    description = Column(String)
+    schedule_id = Column(Integer, ForeignKey("schedules.id"))
+    
+    schedule = relationship("Schedule", back_populates="forms")
