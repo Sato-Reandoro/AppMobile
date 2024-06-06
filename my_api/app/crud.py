@@ -49,9 +49,11 @@ def delete_user(db: Session, user_id: int):
     db.commit()
     return user
 
-
 def create_schedule_with_form(db: Session, schedule: schemas.ScheduleCreate, user_id: int):
-    db_schedule = models.Schedule(**schedule.dict(), owner_id=user_id)
+    schedule_data = schedule.dict(exclude_unset=True)
+    schedule_data['status'] = False  # Adicione o campo status como False
+
+    db_schedule = models.Schedule(**schedule_data, owner_id=user_id)
     db.add(db_schedule)
     db.commit()
     db.refresh(db_schedule)
@@ -83,6 +85,8 @@ def update_schedule(db: Session, schedule_id: int, schedule: schemas.ScheduleUpd
         db_schedule.condominium = schedule.condominium
     if schedule.date_time is not None:
         db_schedule.date_time = schedule.date_time
+    if schedule.status is not None:
+        db_schedule.status = schedule.status
     db.commit()
     db.refresh(db_schedule)
     return db_schedule

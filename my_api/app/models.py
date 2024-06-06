@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean
 from sqlalchemy.orm import relationship
 from .database import Base
 
@@ -12,6 +12,8 @@ class User(Base):
 
     schedules = relationship("Schedule", back_populates="owner")
 
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean
+
 class Schedule(Base):
     __tablename__ = "schedules"
     
@@ -20,7 +22,8 @@ class Schedule(Base):
     condominium = Column(String, index=True)
     date_time = Column(DateTime)
     owner_id = Column(Integer, ForeignKey("users.id"))
-    
+    status = Column(Boolean, default=False)
+
     owner = relationship("User", back_populates="schedules")
     forms = relationship("Form", back_populates="schedule", cascade="all, delete-orphan")
 

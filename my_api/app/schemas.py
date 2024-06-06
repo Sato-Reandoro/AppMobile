@@ -22,11 +22,11 @@ class User(UserBase):
     class Config:
         orm_mode = True
 
-
 class ScheduleBase(BaseModel):
     name: Optional[str]
     condominium: Optional[str]
     date_time: Optional[datetime]
+    status: Optional[bool] = False
 
 class ScheduleCreate(ScheduleBase):
     name: str
@@ -37,6 +37,7 @@ class ScheduleUpdate(BaseModel):
     name: Optional[str] = None
     condominium: Optional[str] = None
     date_time: Optional[datetime] = None
+    status: Optional[bool] = None
 
 class Schedule(ScheduleBase):
     id: int
