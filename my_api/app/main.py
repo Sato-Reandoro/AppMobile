@@ -128,8 +128,8 @@ def delete_user(
 
 # Rota para criar um agendamento e um formulário vinculado
 @app.post("/schedules/", response_model=schemas.Schedule)
-def create_schedule(schedule_in: schemas.ScheduleCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
-    schedule, form = crud.create_schedule_with_form(db, schedule=schedule_in, user_id=current_user.id)
+def create_schedule(schedule_in: schemas.ScheduleCreate, form_in: schemas.FormCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
+    schedule, form = crud.create_schedule_with_form(db, schedule_in=schedule_in, form_in=form_in, user_id=current_user.id)
     return schedule
 
 # Rota para obter todos os agendamentos
@@ -196,7 +196,9 @@ def update_form(form_id: int, form: schemas.FormUpdate, db: Session = Depends(ge
     db_form = crud.get_form(db, form_id=form_id)
     if db_form is None:
         raise HTTPException(status_code=404, detail="Form not found")
+    
     schedule = crud.get_schedule(db, schedule_id=db_form.schedule_id)
     if schedule.owner_id != current_user.id and current_user.user_type != 'admin':
         raise HTTPException(status_code=403, detail="Not enough permissions")
+    
     return crud.update_form(db=db, form_id=form_id, form=form)

@@ -49,22 +49,18 @@ def delete_user(db: Session, user_id: int):
     db.commit()
     return user
 
-def create_schedule_with_form(db: Session, schedule: schemas.ScheduleCreate, user_id: int):
-    schedule_data = schedule.dict(exclude_unset=True)
-    schedule_data['status'] = False  # Adicione o campo status como False
-
-    db_schedule = models.Schedule(**schedule_data, owner_id=user_id)
-    db.add(db_schedule)
+def create_schedule_with_form(db: Session, schedule_in: schemas.ScheduleCreate, form_in: schemas.FormCreate, user_id: int):
+    schedule = models.Schedule(**schedule_in.dict(), owner_id=user_id)
+    db.add(schedule)
     db.commit()
-    db.refresh(db_schedule)
+    db.refresh(schedule)
 
-    form_data = {"title": schedule.name, "description": schedule.condominium}
-    db_form = models.Form(**form_data, schedule_id=db_schedule.id)
-    db.add(db_form)
+    form = models.Form(**form_in.dict(), schedule_id=schedule.id)
+    db.add(form)
     db.commit()
-    db.refresh(db_form)
+    db.refresh(form)
 
-    return db_schedule, db_form
+    return schedule, form
 
 def get_schedules(db: Session, skip: int = 0, limit: int = 10):
     return db.query(models.Schedule).offset(skip).limit(limit).all()
@@ -105,10 +101,15 @@ def get_form(db: Session, form_id: int):
 
 def update_form(db: Session, form_id: int, form: schemas.FormUpdate):
     db_form = db.query(models.Form).filter(models.Form.id == form_id).first()
-    if form.title is not None:
-        db_form.title = form.title
-    if form.description is not None:
-        db_form.description = form.description
+    if db_form is None:
+        return None
+    
+    form_data = form.dict(exclude_unset=True)
+    for key, value in form_data.items():
+        if key in ['data', 'data_condominio'] and value is not None:
+            value = str(value)  # Converte para string
+        setattr(db_form, key, value)
+
     db.commit()
     db.refresh(db_form)
     return db_form
