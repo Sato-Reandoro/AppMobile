@@ -162,3 +162,12 @@ def update_form(db: Session, form_id: int, form_data: dict):
         db.commit()
         db.refresh(db_form)
     return db_form
+
+
+
+def delete_form_by_schedule_id(db: Session, schedule_id: int):
+    db.query(models.Form).filter(models.Form.schedule_id == schedule_id).delete()
+    db.commit()
+
+
+    

@@ -117,13 +117,8 @@ def delete_user(
     return deleted_user
 
 
-# Rota para criar um agendamento e um formulário vinculado
-@app.post("/schedules/", response_model=schemas.Schedule)
-def create_schedule(schedule_in: schemas.ScheduleCreate, db: Session = Depends(get_db)):
-    # Criar o agendamento
-    schedule = crud.create_schedule(db, schedule_in=schedule_in)
-    
-    # Criar um formulário vinculado ao agendamento com todos os campos preenchidos como strings vazias
+# Função para criar um formulário vinculado a um agendamento
+def create_linked_form(schedule_id: int, db: Session):
     form_data = {
         "title": "",
         "data": "",
@@ -165,10 +160,21 @@ def create_schedule(schedule_in: schemas.ScheduleCreate, db: Session = Depends(g
         "situacao": "",
         "info_adicional": "",
         "como_conheceu_a_porter": "",
+        "schedule_id": schedule_id
     }
-    form = crud.create_form(db, form_data=form_data)
+    return crud.create_form(db, form_data=form_data)
+
+# Rota para criar um agendamento e um formulário vinculado
+@app.post("/schedules/", response_model=schemas.Schedule)
+def create_schedule(schedule_in: schemas.ScheduleCreate, db: Session = Depends(get_db)):
+    # Criar o agendamento
+    schedule = crud.create_schedule(db, schedule_in=schedule_in)
+    
+    # Criar um formulário vinculado ao agendamento com todos os campos preenchidos como strings vazias
+    create_linked_form(schedule_id=schedule.id, db=db)
     
     return schedule
+
 
 
 @app.get("/schedules/", response_model=List[schemas.Schedule])
@@ -249,11 +255,16 @@ def delete_schedule(schedule_id: int, db: Session = Depends(get_db)):
     db_schedule = crud.get_schedule(db, schedule_id=schedule_id)
     if db_schedule is None:
         raise HTTPException(status_code=404, detail="Schedule not found")
+
+    # Exclua o agendamento
     deleted_schedule = crud.delete_schedule(db, schedule_id=schedule_id)
+
+    # Exclua o formulário associado
+    deleted_form = crud.delete_form_by_schedule_id(db, schedule_id=schedule_id)
 
     # Converter datetime para string
     deleted_schedule.date_time = deleted_schedule.date_time.strftime("%Y-%m-%d %H:%M:%S")
-    
+
     return deleted_schedule
 
 # Rota para obter um formulário por ID

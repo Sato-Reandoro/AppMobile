@@ -85,8 +85,10 @@ class FormBase(BaseModel):
 class FormCreate(FormBase):
     pass
 
+
 class FormUpdate(FormBase):
-    pass
+      title: Optional[str] = None
+      data: Optional[str] = None
 
 class Form(FormBase):
     id: int
